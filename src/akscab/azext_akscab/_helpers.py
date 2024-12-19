@@ -1,3 +1,4 @@
+from knack.util import CLIError
 import yaml
 import errno
 import platform
@@ -5,9 +6,15 @@ import stat
 import tempfile
 import os
 import subprocess
+
+from azure.cli.core.azclierror import (
+    FileOperationError,
+)
 from knack.log import get_logger
+from knack.prompting import NoTTYException, prompt_y_n
 
 logger = get_logger(__name__)
+
 
 def print_or_merge_credentials(path, kubeconfig, overwrite_existing, context_name):
     """Merge an unencrypted kubeconfig into the file at the specified path, or print it to
@@ -44,6 +51,7 @@ def print_or_merge_credentials(path, kubeconfig, overwrite_existing, context_nam
     finally:
         additional_file.close()
         os.remove(temp_path)
+
 
 def _merge_kubernetes_configurations(existing_file, addition_file, replace, context_name=None):
     existing = _load_kubernetes_configuration(existing_file)
@@ -140,10 +148,12 @@ def _handle_merge(existing, addition, key, replace):
                         raise CLIError(msg.format(i['name'], key))
         existing[key].append(i)
 
+
 def must(err):
     if err:
         print(f"err: {err}")
         raise Exception(err)
+
 
 def get_output(command):
     result = subprocess.run(command, capture_output=True, text=True, shell=True)

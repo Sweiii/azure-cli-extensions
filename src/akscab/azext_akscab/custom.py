@@ -6,12 +6,18 @@ import asyncio
 import subprocess
 import os
 import base64
-from _helpers import *
+from azext_akscab._helpers import (
+    get_output,
+    must,
+    print_or_merge_credentials,
+)
+
 
 def update_akscab(cmd, instance, tags=None):
     with cmd.update_context(instance) as c:
         c.set_param('tags', tags)
     return instance
+
 
 async def create_graphclient():
     scopes = ['User.Read']
@@ -26,21 +32,23 @@ async def create_graphclient():
     username = await graph_client.me.get()
     return username
 
+
 async def getCurrentUsername():
     user = await create_graphclient()
     return user.user_principal_name
 
+
 def create_csr(cmd, role, environment='nonprod', keysize=3072, expiration_seconds=1800, dev=False):
     get_base_kubeconfig(environment)
-    if dev == False:
+    if dev is False:
         user = asyncio.run(getCurrentUsername())
         username = user.split("@")[0]
         data = generate_key(username, role, keysize)
-        encoded = base64.b64encode (bytes(data, "utf-8"))
+        encoded = base64.b64encode(bytes(data, "utf-8"))
     else:
         username = "minikube-user"
         data = generate_key("minikube-user", role, keysize)
-        encoded = base64.b64encode (bytes(data, "utf-8")).decode('utf-8')
+        encoded = base64.b64encode(bytes(data, "utf-8")).decode('utf-8')
     substitute = {
         'user': username,
         'request': encoded,
@@ -69,6 +77,7 @@ def generate_key(username, role, keysize):
     result = subprocess.run(cmd, capture_output=True, text=True)
     must(result.returncode)
     return result.stdout
+
 
 def apply_certificate_signing_request(csr_yaml):
     process = subprocess.Popen(['kubectl', 'apply', '-f', '-'], stdin=subprocess.PIPE, text=True)
@@ -121,17 +130,21 @@ def set_context(context_name):
     result.check_returncode()
     must(result.returncode)
 
+
 def get_clustername_for_context(context_name):
     command = f'kubectl config view -o jsonpath="{{.contexts[?(@.name == \\"{context_name}\\")].context.cluster}}"'
     return get_output(command)
+
 
 def get_cluster_info(current_cluster):
     command = f'kubectl config view --raw -o jsonpath="{{.clusters[?(@.name == \\"{current_cluster}\\")]}}"'
     return get_output(command)
 
+
 def get_certificate_signing_request(username):
     command = f'kubectl get csr {username} -o jsonpath="{{.status.certificate}}"'
     return get_output(command)
+
 
 def delete_certificate_signing_request(username):
     command = f'kubectl delete csr {username}'
@@ -145,7 +158,6 @@ def get_base_kubeconfig(environment='nonprod'):
     prod = f'az aks get-credentials --name {clustername} --resource-group {clustername} --overwrite-existing --subscription {subscription}'
     command = nonprod if environment == 'nonprod' else prod
     result = subprocess.run(command, capture_output=True, text=True, shell=True)
-    err = result.stderr
     if result.returncode != 0:
         must(result)
     must(result.check_returncode())

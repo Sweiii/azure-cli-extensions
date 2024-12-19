@@ -1,4 +1,3 @@
-from knack.util import CLIError
 from azure.identity import DeviceCodeCredential
 from msgraph import GraphServiceClient
 from string import Template
@@ -38,7 +37,7 @@ async def getCurrentUsername():
     return user.user_principal_name
 
 
-def create_csr(cmd, role, environment='nonprod', keysize=3072, expiration_seconds=1800, dev=False):
+def create_csr(role, environment='nonprod', keysize=3072, expiration_seconds=1800, dev=False):
     get_base_kubeconfig(environment)
     if dev is False:
         user = asyncio.run(getCurrentUsername())
@@ -54,7 +53,7 @@ def create_csr(cmd, role, environment='nonprod', keysize=3072, expiration_second
         'request': encoded,
         'expirationSeconds': expiration_seconds
     }
-    dirname, filename = os.path.split(os.path.abspath(__file__))
+    dirname = os.path.split(os.path.abspath(__file__))[0]
     templatePath = os.path.join(dirname, 'templates/certificatesigningrequest')
     with open(templatePath, 'r') as f:
         src = Template(f.read())
@@ -154,7 +153,9 @@ def delete_certificate_signing_request(username):
 def get_base_kubeconfig(environment='nonprod'):
     clustername = f'corehosting-aks-{environment}'
     subscription = f'cab-automotive-corehosting-{environment}'
+    # pylint: disable=line-too-long
     nonprod = f'az aks get-credentials --name {clustername} --resource-group {clustername} --overwrite-existing --admin --subscription {subscription}'
+    # pylint: disable=line-too-long
     prod = f'az aks get-credentials --name {clustername} --resource-group {clustername} --overwrite-existing --subscription {subscription}'
     command = nonprod if environment == 'nonprod' else prod
     result = subprocess.run(command, capture_output=True, text=True, shell=True)

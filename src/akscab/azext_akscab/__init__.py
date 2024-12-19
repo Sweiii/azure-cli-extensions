@@ -12,10 +12,9 @@ class AkscabCommandsLoader(AzCommandsLoader):
 
     def __init__(self, cli_ctx=None):
         from azure.cli.core.commands import CliCommandType
-        from azext_akscab._client_factory import cf_akscab
         akscab_custom = CliCommandType(
             operations_tmpl='azext_akscab.custom#{}',
-            client_factory=cf_akscab)
+            client_factory=None)
         super(AkscabCommandsLoader, self).__init__(cli_ctx=cli_ctx, custom_command_type=akscab_custom)
 
     def load_command_table(self, args):

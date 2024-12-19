@@ -4,9 +4,6 @@
 # --------------------------------------------------------------------------------------------
 
 # pylint: disable=line-too-long
-from azure.cli.core.commands import CliCommandType
-from azext_akscab._client_factory import cf_akscab
-
 
 def load_command_table(self, _):
 

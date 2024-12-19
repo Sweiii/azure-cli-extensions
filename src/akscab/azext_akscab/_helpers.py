@@ -1,4 +1,6 @@
 from knack.util import CLIError
+from knack.log import get_logger
+from knack.prompting import NoTTYException, prompt_y_n
 import yaml
 import errno
 import platform
@@ -10,8 +12,6 @@ import subprocess
 from azure.cli.core.azclierror import (
     FileOperationError,
 )
-from knack.log import get_logger
-from knack.prompting import NoTTYException, prompt_y_n
 
 logger = get_logger(__name__)
 
@@ -152,7 +152,7 @@ def _handle_merge(existing, addition, key, replace):
 def must(err):
     if err:
         print(f"err: {err}")
-        raise Exception(err)
+        raise ValueError(err)
 
 
 def get_output(command):

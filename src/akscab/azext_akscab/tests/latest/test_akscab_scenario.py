@@ -15,26 +15,26 @@ TEST_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '..'))
 
 class AkscabScenarioTest(ScenarioTest):
 
-    @ResourceGroupPreparer(name_prefix='cli_test_akscab')
-    def test_akscab(self, resource_group):
+    def test_akscab(self):
 
         self.kwargs.update({
-            'name': 'test1'
+            'role': 'pod-reader',
+            'environment': 'nonprod'
         })
 
-        self.cmd('akscab create -g {rg} -n {name} --tags foo=doo', checks=[
-            self.check('tags.foo', 'doo'),
-            self.check('name', '{name}')
+        self.cmd('az akscab create --role {role} --environment {environment} --dev', checks=[
+            self.check('role', '{role}'),
+            self.check('environment', '{environment}')
         ])
-        self.cmd('akscab update -g {rg} -n {name} --tags foo=boo', checks=[
-            self.check('tags.foo', 'boo')
+
+        self.cmd('az akscab create --role pod-reader --environment {environment} --expiration-seconds 600 --dev', checks=[
+            self.check('role', '{role}'),
+            self.check('environment', '{environment}'),
+            self.check('expiration-seconds', '600')
         ])
-        count = len(self.cmd('akscab list').get_output_in_json())
-        self.cmd('akscab show - {rg} -n {name}', checks=[
-            self.check('name', '{name}'),
-            self.check('resourceGroup', '{rg}'),
-            self.check('tags.foo', 'boo')
+
+        self.cmd('az akscab create --role pod-reader --environment {environment} --keysize 4096 --dev', checks=[
+            self.check('role', '{role}'),
+            self.check('environment', '{environment}'),
+            self.check('keysize', '4096')
         ])
-        self.cmd('akscab delete -g {rg} -n {name}')
-        final_count = len(self.cmd('akscab list').get_output_in_json())
-        self.assertTrue(final_count, count - 1)

@@ -83,10 +83,13 @@ def apply_certificate_signing_request(csr_yaml):
     process.communicate(input=csr_yaml)
 
 
-def create_kubeconfig(username, environment='nonprod'):
+def create_kubeconfig(username, environment='nonprod', dev=False):
     key_name = f"{username}.key"
     dirname = os.path.split(os.path.abspath(__file__))[0]
     keyPath = os.path.join(dirname, key_name)
+
+    if dev is True:
+        get_output('kubectl config use-context minikube')
 
     current_context = get_output('kubectl config current-context')
     current_cluster = get_clustername_for_context(current_context)
@@ -123,7 +126,7 @@ contexts:
     set_context(context_name)
 
 
-def set_context(context_name):
+def set_context(context_name, dev=False):
     command = f'kubectl config use-context {context_name}'
     result = subprocess.run(command, capture_output=True, text=True, shell=True)
     result.check_returncode()
@@ -150,7 +153,9 @@ def delete_certificate_signing_request(username):
     return get_output(command)
 
 
-def get_base_kubeconfig(environment='nonprod'):
+def get_base_kubeconfig(environment='nonprod', dev=False):
+    if dev is True:
+        return
     clustername = f'corehosting-aks-{environment}'
     subscription = f'cab-automotive-corehosting-{environment}'
     # pylint: disable=line-too-long

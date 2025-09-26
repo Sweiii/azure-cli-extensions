@@ -58,4 +58,3 @@ helps['akscab list'] = """
     type: command
     short-summary: Lists available commands in the akscab extension.
 """
-

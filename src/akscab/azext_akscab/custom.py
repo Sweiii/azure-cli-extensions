@@ -7,7 +7,6 @@ import os
 import base64
 from azext_akscab._helpers import (
     get_output,
-    must,
     print_or_merge_credentials,
 )
 
@@ -99,13 +98,10 @@ def apply_certificate_signing_request(csr_yaml):
         raise subprocess.CalledProcessError(process.returncode, process.args)
 
 
-def create_kubeconfig(username, environment='nonprod', dev=False):
+def create_kubeconfig(username, environment='nonprod'):
     key_name = f"{username}.key"
     dirname = os.path.split(os.path.abspath(__file__))[0]
     keyPath = os.path.join(dirname, key_name)
-
-    if dev is True:
-        get_output('kubectl config use-context minikube')
 
     current_context = get_output('kubectl config current-context')
     current_cluster = get_clustername_for_context(current_context)
@@ -154,7 +150,8 @@ def get_clustername_for_context(context_name):
 
 
 def get_cluster_info(current_cluster):
-    command = ['kubectl', 'config', 'view', '--raw', '-o', f'jsonpath={{.clusters[?(@.name == "{current_cluster}")]}}']
+    command = ['kubectl', 'config', 'view', '--raw', '-o',
+               f'jsonpath={{.clusters[?(@.name == "{current_cluster}")]}}']
     return get_output(command)
 
 

@@ -4,17 +4,7 @@
 # --------------------------------------------------------------------------------------------
 # pylint: disable=line-too-long
 
-from knack.arguments import CLIArgumentType
-
-
 def load_arguments(self, _):
-
-    from azure.cli.core.commands.parameters import tags_type
-    from azure.cli.core.commands.validators import get_default_location_from_resource_group
-
-
-
-
 
     with self.argument_context('akscab create csr') as c:
         c.argument('role', type=str, help='The name of the AKS role to use.')

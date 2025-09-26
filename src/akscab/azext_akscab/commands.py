@@ -13,5 +13,3 @@ def load_command_table(self, _):
     with self.command_group('akscab create') as g:
         g.custom_command('csr', 'create_csr')
         g.custom_command('help', 'create_help')
-
-

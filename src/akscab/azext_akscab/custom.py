@@ -145,7 +145,8 @@ def set_context(context_name, dev=False):
 
 
 def get_clustername_for_context(context_name):
-    command = ['kubectl', 'config', 'view', '-o', f'jsonpath={{.contexts[?(@.name == "{context_name}")].context.cluster}}']
+    command = ['kubectl', 'config', 'view', '-o',
+               f'jsonpath={{.contexts[?(@.name == "{context_name}")].context.cluster}}']
     return get_output(command)
 
 

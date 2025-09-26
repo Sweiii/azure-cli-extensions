@@ -51,6 +51,7 @@ async def getCurrentUsername():
     return user.user_principal_name
 
 
+# pylint: disable=unused-argument
 def create_csr(role, environment='nonprod', keysize=3072, expiration_seconds=1800, dev=False):
     # get_base_kubeconfig(environment)
     if dev is False:

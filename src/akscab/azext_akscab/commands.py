@@ -8,7 +8,10 @@
 def load_command_table(self, _):
 
     with self.command_group('akscab') as g:
-        g.custom_command('create', 'create_csr')
+        g.custom_command('list', 'list_commands')
 
-    with self.command_group('akscab', is_preview=True):
-        pass
+    with self.command_group('akscab create') as g:
+        g.custom_command('csr', 'create_csr')
+        g.custom_command('help', 'create_help')
+
+

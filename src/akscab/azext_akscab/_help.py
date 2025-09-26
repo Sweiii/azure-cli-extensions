@@ -49,6 +49,9 @@ helps['akscab create csr'] = """
 helps['akscab create help'] = """
     type: command
     short-summary: Shows help for the create csr command.
+    examples:
+      - name: Show help for create csr command
+        text: az akscab create help
 """
 
 helps['akscab list'] = """

@@ -34,3 +34,7 @@ class AkscabScenarioTest(ScenarioTest):
     def test_akscab_create_csr_parameter_validation(self):
         """Test akscab create csr parameter validation"""
         self.cmd('akscab create csr')
+
+    def test_akscab_create_csr_all_parameter_validation(self):
+        """Test akscab create csr parameter validation"""
+        self.cmd('akscab create csr --role test-role --environment dev --expiration-seconds 600 --keysize 2048 --kubeconfig-path /tmp/kubeconfig --dev')

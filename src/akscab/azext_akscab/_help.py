@@ -36,6 +36,8 @@ helps['akscab create'] = """
 
         Available subcommands:
           csr    Create a Certificate Signing Request
+          help   Show help for create commands
+          list   List available create subcommands
 """
 
 helps['akscab create csr'] = """
@@ -76,6 +78,14 @@ helps['akscab create help'] = """
     examples:
       - name: Show help for create csr command
         text: az akscab create help
+"""
+
+helps['akscab create list'] = """
+    type: command
+    short-summary: Lists available subcommands for create.
+    examples:
+      - name: List available create subcommands
+        text: az akscab create list
 """
 
 helps['akscab list'] = """

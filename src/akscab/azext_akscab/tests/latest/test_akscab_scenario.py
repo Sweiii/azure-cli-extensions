@@ -29,6 +29,10 @@ class AkscabScenarioTest(ScenarioTest):
         """Test akscab create help command"""
         self.cmd('akscab create help')
 
+    def test_akscab_create_list(self):
+        """Test akscab create list command"""
+        self.cmd('akscab create list')
+
     def test_akscab_create_csr_parameter_validation(self):
         """Test akscab create csr parameter validation"""
         # Test that the command shows parameter help when --role is missing

@@ -12,5 +12,6 @@ def load_command_table(self, _):
         g.custom_command('help', 'general_help')
 
     with self.command_group('akscab create') as g:
+        g.custom_command('', 'create_group_help')  # Default command when no subcommand is provided
         g.custom_command('csr', 'create_csr')
         g.custom_command('help', 'create_help')

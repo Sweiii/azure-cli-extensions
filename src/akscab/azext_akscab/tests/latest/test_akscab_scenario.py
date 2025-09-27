@@ -45,7 +45,7 @@ class AkscabScenarioTest(ScenarioTest):
         # Test that the command accepts the --role parameter
         # It may fail due to authentication/file access, but parameter validation should pass
         try:
-            self.cmd('akscab create csr --role test-role --dev')
+            self.cmd('akscab create csr --role test-role')
         except Exception as e:
             # The command may fail due to missing files/auth, but not due to parameter validation
             # We just want to ensure the parameters are accepted
@@ -56,7 +56,7 @@ class AkscabScenarioTest(ScenarioTest):
         """Test akscab create csr with all parameters"""
         # Test that all parameters are accepted
         try:
-            self.cmd('akscab create csr --role test-role --environment dev --expiration-seconds 600 --keysize 2048 --dev --kubeconfig-path /tmp/kubeconfig')
+            self.cmd('akscab create csr --role test-role --environment dev --expiration-seconds 600 --keysize 2048 --kubeconfig-path /tmp/kubeconfig')
         except Exception as e:
             # Command may fail due to file/auth issues, but parameters should be valid
             self.assertNotIn("unrecognized arguments", str(e))

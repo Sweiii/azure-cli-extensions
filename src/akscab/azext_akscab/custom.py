@@ -50,9 +50,8 @@ def create_help():
     print("2. Specify the environment with --environment (default: nonprod)")
     print("3. Optionally set expiration seconds with --expiration-seconds (default: 1800)")
     print("4. Optionally set keysize with --keysize (default: 3072)")
-    print("5. Use --dev if not using graph client (default: False)")
     print("6. Optionally specify kubeconfig path with --kubeconfig-path (default: ~/.kube/config)")
-    print("Example: az akscab create csr --role pod-reader --environment nonprod --dev")
+    print("Example: az akscab create csr --role pod-reader --environment nonprod")
 
 
 async def create_graphclient():
@@ -76,7 +75,7 @@ async def getCurrentUsername():
 
 # pylint: disable=unused-argument
 def create_csr(role=None, environment='nonprod', keysize=3072,
-               expiration_seconds=1800, dev=False, kubeconfig_path='~/.kube/config'):
+               expiration_seconds=1800, kubeconfig_path='~/.kube/config'):
     if role is None:
         print("Parameters for 'az akscab create csr':")
         print()
@@ -87,7 +86,6 @@ def create_csr(role=None, environment='nonprod', keysize=3072,
         print("  --environment               The environment to use (default: nonprod)")
         print("  --expiration-seconds        The number of seconds the certificate is valid for (default: 1800)")
         print("  --keysize                   The size of the rsa key to generate (default: 3072)")
-        print("  --dev                       If true, don't use the graph client to get the username (default: False)")
         print("  --kubeconfig-path           Path to the kubeconfig file (default: ~/.kube/config)")
         print()
         print("Example:")
@@ -95,20 +93,16 @@ def create_csr(role=None, environment='nonprod', keysize=3072,
         return
 
     # get_base_kubeconfig(environment)
-    if dev is False:
-        user = asyncio.run(getCurrentUsername())
-        username = user.split("@")[0]
-        data = generate_key(username, role, keysize)
-        encoded = base64.b64encode(bytes(data, "utf-8")).decode('utf-8')
-    else:
-        username = "minikube-user"
-        data = generate_key("minikube-user", role, keysize)
-        encoded = base64.b64encode(bytes(data, "utf-8")).decode('utf-8')
+    user = asyncio.run(getCurrentUsername())
+    username = user.split("@")[0]
+    data = generate_key(username, role, keysize)
+    encoded = base64.b64encode(bytes(data, "utf-8")).decode('utf-8')
     substitute = {
         'user': username,
         'request': encoded,
         'expirationSeconds': expiration_seconds
     }
+
     dirname = os.path.split(os.path.abspath(__file__))[0]
     templatePath = os.path.join(dirname, 'templates/certificatesigningrequest')
     with open(templatePath, 'r') as f:
@@ -183,7 +177,7 @@ contexts:
     set_context(context_name)
 
 
-def set_context(context_name, dev=False):
+def set_context(context_name):
     command = ['kubectl', 'config', 'use-context', context_name]
     result = subprocess.run(command, capture_output=True, text=True)
     result.check_returncode()
@@ -246,9 +240,7 @@ def get_cluster_info_from_config(config, cluster_name):
     return None
 
 
-def get_base_kubeconfig(environment='nonprod', dev=False):
-    if dev is True:
-        return
+def get_base_kubeconfig(environment='nonprod'):
     clustername = f'corehosting-aks-{environment}'
     subscription = f'cab-automotive-corehosting-{environment}'
     command = [

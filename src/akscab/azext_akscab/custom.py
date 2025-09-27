@@ -79,7 +79,10 @@ def check_dependencies():
     missing_tools = []
     for tool in required_tools:
         try:
-            subprocess.run([tool, '--version'], capture_output=True, check=True)
+            if tool == 'kubectl':
+                subprocess.run([tool, 'version'], capture_output=True, check=True)
+            else:
+                subprocess.run([tool, '--version'], capture_output=True, check=True)
         except (subprocess.CalledProcessError, FileNotFoundError):
             missing_tools.append(tool)
     if missing_tools:

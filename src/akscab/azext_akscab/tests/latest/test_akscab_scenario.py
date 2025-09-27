@@ -29,18 +29,33 @@ class AkscabScenarioTest(ScenarioTest):
         """Test akscab create help command"""
         self.cmd('akscab create help')
 
-    @unittest.skip('Requires authentication and file system access')
-    def test_akscab_create_csr_parameters(self):
-        """Test akscab create csr parameter display (skipped due to auth requirements)"""
-        # This would test the parameter display when no role is provided
-        # But it requires the extension to be loaded and would try to authenticate
-        pass
+    def test_akscab_create_csr_parameter_validation(self):
+        """Test akscab create csr parameter validation"""
+        # Test that the command shows parameter help when --role is missing
+        # This tests the parameter validation logic without requiring authentication
+        with self.assertRaises(SystemExit):
+            # The command should exit with error when required parameters are missing
+            self.cmd('akscab create csr')
 
-    @unittest.skip('Requires authentication and file system access')
-    def test_akscab_create_csr_with_minimal_params(self):
-        """Test akscab create csr with minimal parameters (skipped due to auth requirements)"""
-        # This would test actual CSR creation but requires:
-        # - Azure authentication
-        # - File system access for templates
-        # - OpenSSL for key generation
-        pass
+    def test_akscab_create_csr_with_role_parameter(self):
+        """Test akscab create csr with --role parameter"""
+        # Test that the command accepts the --role parameter
+        # It may fail due to authentication/file access, but parameter validation should pass
+        try:
+            self.cmd('akscab create csr --role test-role --dev')
+        except Exception as e:
+            # The command may fail due to missing files/auth, but not due to parameter validation
+            # We just want to ensure the parameters are accepted
+            self.assertNotIn("unrecognized arguments", str(e))
+            self.assertNotIn("the following arguments are required", str(e))
+
+    def test_akscab_create_csr_all_parameters(self):
+        """Test akscab create csr with all parameters"""
+        # Test that all parameters are accepted
+        try:
+            self.cmd('akscab create csr --role test-role --environment dev --expiration-seconds 600 --keysize 2048 --dev --kubeconfig-path /tmp/kubeconfig')
+        except Exception as e:
+            # Command may fail due to file/auth issues, but parameters should be valid
+            self.assertNotIn("unrecognized arguments", str(e))
+            self.assertNotIn("the following arguments are required", str(e))
+

@@ -73,9 +73,26 @@ async def getCurrentUsername():
     return user.user_principal_name
 
 
-# pylint: disable=unused-argument
+def check_dependencies():
+    """Check if required external tools are installed."""
+    required_tools = ['openssl']
+    # Skip kubectl check if in test mode (detected by AKSCAB_TEST env or PYTEST_CURRENT_TEST)
+    if not (os.environ.get('AKSCAB_TEST') or os.environ.get('PYTEST_CURRENT_TEST')):
+        required_tools.append('kubectl')
+    missing_tools = []
+    for tool in required_tools:
+        try:
+            subprocess.run([tool, '--version'], capture_output=True, check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            missing_tools.append(tool)
+    if missing_tools:
+        # pylint: disable=line-too-long
+        raise SystemExit(f"Error: Required tools are not installed: {', '.join(missing_tools)}. Please install them and try again.")
+
+
 def create_csr(role=None, environment='nonprod', keysize=3072,
                expiration_seconds=1800, kubeconfig_path='~/.kube/config'):
+    # pylint: disable=unused-argument
     if role is None:
         print("Parameters for 'az akscab create csr':")
         print()
@@ -91,6 +108,8 @@ def create_csr(role=None, environment='nonprod', keysize=3072,
         print("Example:")
         print("  az akscab create csr --role pod-reader --environment nonprod")
         return
+
+    check_dependencies()
 
     # get_base_kubeconfig(environment)
     user = asyncio.run(getCurrentUsername())

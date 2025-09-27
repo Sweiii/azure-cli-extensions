@@ -104,6 +104,7 @@ def create_csr(role=None, environment='nonprod', keysize=3072,
         print("  --expiration-seconds        The number of seconds the certificate is valid for (default: 1800)")
         print("  --keysize                   The size of the rsa key to generate (default: 3072)")
         print("  --kubeconfig-path           Path to the kubeconfig file (default: ~/.kube/config)")
+        print("  --dev                       Optional flag to indicate development mode with minikube (default: False)")
         print()
         print("Example:")
         print("  az akscab create csr --role pod-reader --environment nonprod")

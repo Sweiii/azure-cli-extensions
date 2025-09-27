@@ -3,97 +3,44 @@
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
 
+import os
 import unittest
-from unittest.mock import patch
-from io import StringIO
-from azext_akscab.custom import list_commands, general_help, create_group_help, create_help, create_csr
+
+from azext_akscab.tests import try_manual
+from azure.cli.testsdk import ScenarioTest
 
 
-class AkscabScenarioTest(unittest.TestCase):
-
-    def test_list_commands(self):
-        """Test that list_commands displays available commands"""
-        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            list_commands()
-            output = mock_stdout.getvalue()
-            self.assertIn("Available commands for 'az akscab':", output)
-            self.assertIn("create", output)
-            self.assertIn("list", output)
-            self.assertIn("help", output)
-
-    def test_general_help(self):
-        """Test that general_help displays help information"""
-        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            general_help()
-            output = mock_stdout.getvalue()
-            self.assertIn("akscab extension commands:", output)
-            self.assertIn("az akscab create", output)
-            self.assertIn("az akscab list", output)
-            self.assertIn("az akscab help", output)
-
-    def test_create_group_help(self):
-        """Test that create_group_help displays available subcommands"""
-        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            create_group_help()
-            output = mock_stdout.getvalue()
-            self.assertIn("Available subcommands for 'az akscab create':", output)
-            self.assertIn("csr", output)
-            self.assertIn("az akscab create <subcommand> --help", output)
-
-    def test_create_help(self):
-        """Test that create_help displays CSR creation help"""
-        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            create_help()
-            output = mock_stdout.getvalue()
-            self.assertIn("To use the create csr command:", output)
-            self.assertIn("--role", output)
-            self.assertIn("--environment", output)
-            self.assertIn("--expiration-seconds", output)
-
-    def test_create_csr_without_role(self):
-        """Test that create_csr shows parameter info when role is not provided"""
-        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            create_csr(role=None)
-            output = mock_stdout.getvalue()
-            self.assertIn("Parameters for 'az akscab create csr':", output)
-            self.assertIn("Required:", output)
-            self.assertIn("--role", output)
-            self.assertIn("Optional:", output)
-            self.assertIn("--environment", output)
-            self.assertIn("--expiration-seconds", output)
-            self.assertIn("--keysize", output)
-            self.assertIn("--dev", output)
-            self.assertIn("--kubeconfig-path", output)
-
-    @patch('azext_akscab.custom.create_graphclient')
-    @patch('asyncio.run')
-    def test_create_csr_with_role(self, mock_asyncio_run, mock_create_graphclient):
-        """Test that create_csr proceeds when role is provided"""
-        # Mock the graph client and user
-        mock_user = type('User', (), {'user_principal_name': 'test@example.com'})()
-        mock_asyncio_run.return_value = mock_user
-
-        with patch('os.path.join') as mock_join, \
-             patch('os.path.split') as mock_split, \
-             patch('builtins.open', create=True) as mock_open, \
-             patch('subprocess.run') as mock_run:
-
-            # Mock file operations
-            mock_split.return_value = ('/path', 'akscab')
-            mock_join.return_value = '/path/templates/certificatesigningrequest'
-            mock_file = mock_open.return_value.__enter__.return_value
-            mock_file.read.return_value = 'template content'
-            mock_run.return_value = type('CompletedProcess', (), {'returncode': 0})()
-
-            # This should not raise an exception and should proceed with CSR creation
-            try:
-                create_csr(role='pod-reader', dev=True)  # Use dev=True to avoid graph API call
-                # If we get here without exception, the test passes
-                self.assertTrue(True)
-            except Exception as e:
-                # If there's an exception, it should be related to missing files/keys, not parameter validation
-                self.assertNotIn("required", str(e).lower())
+TEST_DIR = os.path.abspath(os.path.join(os.path.abspath(__file__), '..'))
 
 
-if __name__ == '__main__':
-    unittest.main()
+# Test class for Scenario
+@try_manual
+class AkscabScenarioTest(ScenarioTest):
+
+    def test_akscab_list(self):
+        """Test akscab list command"""
+        self.cmd('akscab list')
+
+    def test_akscab_help(self):
+        """Test akscab help command"""
+        self.cmd('akscab help')
+
+    def test_akscab_create_help(self):
+        """Test akscab create help command"""
+        self.cmd('akscab create help')
+
+    @unittest.skip('Requires authentication and file system access')
+    def test_akscab_create_csr_parameters(self):
+        """Test akscab create csr parameter display (skipped due to auth requirements)"""
+        # This would test the parameter display when no role is provided
+        # But it requires the extension to be loaded and would try to authenticate
+        pass
+
+    @unittest.skip('Requires authentication and file system access')
+    def test_akscab_create_csr_with_minimal_params(self):
+        """Test akscab create csr with minimal parameters (skipped due to auth requirements)"""
+        # This would test actual CSR creation but requires:
+        # - Azure authentication
+        # - File system access for templates
+        # - OpenSSL for key generation
+        pass

@@ -20,12 +20,10 @@ def print_or_merge_credentials(path, kubeconfig, overwrite_existing, context_nam
     """Merge an unencrypted kubeconfig into the file at the specified path, or print it to
     stdout if the path is "-".
     """
-    # Special case for printing to stdout
     if path == "-":
         print(kubeconfig)
         return
 
-    # ensure that at least an empty ~/.kube/config exists
     directory = os.path.dirname(path)
     if directory and not os.path.exists(directory):
         try:
@@ -37,7 +35,6 @@ def print_or_merge_credentials(path, kubeconfig, overwrite_existing, context_nam
         with os.fdopen(os.open(path, os.O_CREAT | os.O_WRONLY, 0o600), 'wt'):
             pass
 
-    # merge the new kubeconfig into the existing one
     fd, temp_path = tempfile.mkstemp()
     additional_file = os.fdopen(fd, 'w+t')
     try:
@@ -84,7 +81,6 @@ def _merge_kubernetes_configurations(existing_file, addition_file, replace, cont
         _handle_merge(existing, addition, 'contexts', replace)
         existing['current-context'] = addition['current-context']
 
-    # check that ~/.kube/config is only read- and writable by its owner
     if platform.system() != "Windows" and not os.path.islink(existing_file):
         # pylint: disable=consider-using-f-string
         existing_file_perms = "{:o}".format(stat.S_IMODE(os.lstat(existing_file).st_mode))

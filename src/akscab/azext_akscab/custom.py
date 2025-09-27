@@ -5,6 +5,8 @@ import asyncio
 import subprocess
 import os
 import base64
+import yaml
+import json
 from azext_akscab._helpers import (
     get_output,
     print_or_merge_credentials,
@@ -18,8 +20,28 @@ def update_akscab(cmd, instance, tags=None):
 
 
 def list_commands():
-    print("Available commands:")
-    print("  create - Commands to create CSRs")
+    print("Available commands for 'az akscab':")
+    print("  create    Commands to create CSRs")
+    print("  list      Lists available commands")
+    print("  help      Shows general help")
+    print()
+    print("For help with a specific command, use:")
+    print("  az akscab <command> --help")
+
+
+def general_help():
+    print("akscab extension commands:")
+    print("  az akscab create - Commands to create CSRs")
+    print("  az akscab list - Lists available commands")
+    print("  az akscab help - Show this help")
+
+
+def create_group_help():
+    print("Available subcommands for 'az akscab create':")
+    print("  csr    Create a Certificate Signing Request")
+    print()
+    print("For help with a specific subcommand, use:")
+    print("  az akscab create <subcommand> --help")
 
 
 def create_help():
@@ -29,6 +51,7 @@ def create_help():
     print("3. Optionally set expiration seconds with --expiration-seconds (default: 1800)")
     print("4. Optionally set keysize with --keysize (default: 3072)")
     print("5. Use --dev if not using graph client (default: False)")
+    print("6. Optionally specify kubeconfig path with --kubeconfig-path (default: ~/.kube/config)")
     print("Example: az akscab create csr --role pod-reader --environment nonprod --dev")
 
 
@@ -52,7 +75,25 @@ async def getCurrentUsername():
 
 
 # pylint: disable=unused-argument
-def create_csr(role, environment='nonprod', keysize=3072, expiration_seconds=1800, dev=False):
+def create_csr(role=None, environment='nonprod', keysize=3072,
+               expiration_seconds=1800, dev=False, kubeconfig_path='~/.kube/config'):
+    if role is None:
+        print("Parameters for 'az akscab create csr':")
+        print()
+        print("Required:")
+        print("  --role                      The name of the AKS role to use")
+        print()
+        print("Optional:")
+        print("  --environment               The environment to use (default: nonprod)")
+        print("  --expiration-seconds        The number of seconds the certificate is valid for (default: 1800)")
+        print("  --keysize                   The size of the rsa key to generate (default: 3072)")
+        print("  --dev                       If true, don't use the graph client to get the username (default: False)")
+        print("  --kubeconfig-path           Path to the kubeconfig file (default: ~/.kube/config)")
+        print()
+        print("Example:")
+        print("  az akscab create csr --role pod-reader --environment nonprod")
+        return
+
     # get_base_kubeconfig(environment)
     if dev is False:
         user = asyncio.run(getCurrentUsername())
@@ -74,11 +115,11 @@ def create_csr(role, environment='nonprod', keysize=3072, expiration_seconds=180
         src = Template(f.read())
         result = src.substitute(substitute)
     apply_certificate_signing_request(result)
-    create_kubeconfig(username, environment)
+    # create_kubeconfig(username, environment, kubeconfig_path)
 
 
 def generate_key(username, role, keysize):
-    subject = f"/CN={username}/O={role}/O=csrdefault"
+    subject = f"/CN={username}/O={role}"
     key_size = f"rsa:{keysize}"
     key_name = f"{username}.key"
     dirname = os.path.split(os.path.abspath(__file__))[0]
@@ -93,20 +134,21 @@ def generate_key(username, role, keysize):
 
 
 def apply_certificate_signing_request(csr_yaml):
-    process = subprocess.Popen(['kubectl', 'apply', '-f', '-'], stdin=subprocess.PIPE, text=True)
+    process = subprocess.Popen(['kubectl', 'apply', '-f', '/dev/stdin'], stdin=subprocess.PIPE, text=True)
     process.communicate(input=csr_yaml)
     if process.returncode != 0:
         raise subprocess.CalledProcessError(process.returncode, process.args)
 
 
-def create_kubeconfig(username, environment='nonprod'):
+def create_kubeconfig(username, environment='nonprod', kubeconfig_path='~/.kube/config_new'):
     key_name = f"{username}.key"
     dirname = os.path.split(os.path.abspath(__file__))[0]
     keyPath = os.path.join(dirname, key_name)
 
-    current_context = get_output('kubectl config current-context')
-    current_cluster = get_clustername_for_context(current_context)
-    cluster_info = get_cluster_info(current_cluster)
+    config = load_kubeconfig(kubeconfig_path)
+    current_context = get_current_context_from_config(config)
+    current_cluster = get_cluster_for_context_from_config(config, current_context)
+    cluster_info = get_cluster_info_from_config(config, current_cluster)
     client_certificate_data = get_certificate_signing_request(username)
     delete_certificate_signing_request(username)
     with open(keyPath, 'rb') as key_file:
@@ -114,17 +156,19 @@ def create_kubeconfig(username, environment='nonprod'):
 
     os.remove(keyPath)
 
-    kubeconfig_content = f"""
-apiVersion: v1
+    # Generate cluster info as JSON string for flow style insertion
+    cluster_yaml = json.dumps(cluster_info)
+
+    kubeconfig_content = f"""apiVersion: v1
 kind: Config
 current-context: {current_cluster}
 clusters:
-- {cluster_info}
+- {cluster_yaml}
 users:
 - name: {current_cluster}
   user:
-    client-certificate-data: {client_certificate_data}
-    client-key-data: {client_key_data}
+    client-certificate-data: "{client_certificate_data}"
+    client-key-data: "{client_key_data}"
 contexts:
 - name: {current_cluster}
   context:
@@ -165,6 +209,41 @@ def get_certificate_signing_request(username):
 def delete_certificate_signing_request(username):
     command = ['kubectl', 'delete', 'csr', username]
     return get_output(command)
+
+
+def load_kubeconfig(kubeconfig_path):
+    """Load and parse the kubeconfig file."""
+    path = os.path.expanduser(kubeconfig_path)
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Kubeconfig file not found: {path}")
+    with open(path, 'r') as f:
+        return yaml.safe_load(f)
+
+
+def get_current_context_from_config(config):
+    """Get the current context from kubeconfig."""
+    return config.get('current-context')
+
+
+def get_cluster_for_context_from_config(config, context_name):
+    """Get the cluster name for a given context."""
+    for context in config.get('contexts', []):
+        if context['name'] == context_name:
+            return context['context']['cluster']
+    return None
+
+
+def get_cluster_info_from_config(config, cluster_name):
+    """Get the cluster info for a given cluster."""
+    for cluster in config.get('clusters', []):
+        if cluster['name'] == cluster_name:
+            # Ensure certificate-authority-data is a string
+            if 'cluster' in cluster and 'certificate-authority-data' in cluster['cluster']:
+                cad = cluster['cluster']['certificate-authority-data']
+                if isinstance(cad, list):
+                    cluster['cluster']['certificate-authority-data'] = ''.join(cad)
+            return cluster
+    return None
 
 
 def get_base_kubeconfig(environment='nonprod', dev=False):

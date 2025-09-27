@@ -57,6 +57,9 @@ helps['akscab create csr'] = """
       - name: --keysize
         type: int
         short-summary: The size of the rsa key to generate.
+      - name: --dev
+        type: bool
+        short-summary: If true, use minikube-user instead of getting username from Azure.
       - name: --kubeconfig-path
         type: string
         short-summary: Path to the kubeconfig file to parse for cluster, context, and user info.
@@ -67,6 +70,8 @@ helps['akscab create csr'] = """
         text: az akscab create csr --role pod-reader --environment nonprod --expiration-seconds 600
       - name: Get the pod-reader role with RSA:4096 key.
         text: az akscab create csr --role pod-reader --environment nonprod --keysize 4096
+      - name: Get the pod-reader role in dev mode.
+        text: az akscab create csr --role pod-reader --environment nonprod --dev
 """
 
 helps['akscab create help'] = """

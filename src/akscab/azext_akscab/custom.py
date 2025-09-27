@@ -91,7 +91,7 @@ def check_dependencies():
 
 
 def create_csr(role=None, environment='nonprod', keysize=3072,
-               expiration_seconds=1800, kubeconfig_path='~/.kube/config'):
+               expiration_seconds=1800, dev=False, kubeconfig_path='~/.kube/config'):
     # pylint: disable=unused-argument
     if role is None:
         print("Parameters for 'az akscab create csr':")
@@ -112,10 +112,16 @@ def create_csr(role=None, environment='nonprod', keysize=3072,
     check_dependencies()
 
     # get_base_kubeconfig(environment)
-    user = asyncio.run(getCurrentUsername())
-    username = user.split("@")[0]
-    data = generate_key(username, role, keysize)
-    encoded = base64.b64encode(bytes(data, "utf-8")).decode('utf-8')
+    if dev:
+        username = "minikube-user"
+        data = generate_key("minikube-user", role, keysize)
+        encoded = base64.b64encode(bytes(data, "utf-8")).decode('utf-8')
+    else:
+        user = asyncio.run(getCurrentUsername())
+        username = user.split("@")[0]
+        data = generate_key(username, role, keysize)
+        encoded = base64.b64encode(bytes(data, "utf-8")).decode('utf-8')
+
     substitute = {
         'user': username,
         'request': encoded,

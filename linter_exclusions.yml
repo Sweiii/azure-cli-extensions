@@ -371,32 +371,7 @@ codespace plan create:
 confidentialledger managedccfs update:
   rule_exclusions:
   - missing_command_test_coverage
-akscab create help:
-  rule_exclusions:
-  - missing_command_example
-  - missing_command_test_coverage
-akscab create csr:
-  rule_exclusions:
-  - missing_command_test_coverage
-  parameters:
-    --role:
-      rule_exclusions:
-      - missing_parameter_test_coverage
-    --environment:
-      rule_exclusions:
-      - missing_parameter_test_coverage
-    --expiration-seconds:
-      rule_exclusions:
-      - missing_parameter_test_coverage
-    --keysize:
-      rule_exclusions:
-      - missing_parameter_test_coverage
-    --dev:
-      rule_exclusions:
-      - missing_parameter_test_coverage
-akscab list:
-  rule_exclusions:
-  - missing_command_test_coverage
+
 containerapp env create:
   parameters:
     infrastructure_subnet_resource_id:

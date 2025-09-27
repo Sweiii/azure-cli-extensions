@@ -33,9 +33,11 @@ class AkscabScenarioTest(ScenarioTest):
         """Test akscab create csr parameter validation"""
         # Test that the command shows parameter help when --role is missing
         # This tests the parameter validation logic without requiring authentication
-        with self.assertRaises(SystemExit):
-            # The command should exit with error when required parameters are missing
-            self.cmd('akscab create csr')
+        result = self.cmd('akscab create csr')
+        # The command should show parameter help when --role is missing
+        self.assertIn("Parameters for 'az akscab create csr':", result)
+        self.assertIn("Required:", result)
+        self.assertIn("--role", result)
 
     def test_akscab_create_csr_with_role_parameter(self):
         """Test akscab create csr with --role parameter"""

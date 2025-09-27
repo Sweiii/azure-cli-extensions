@@ -75,10 +75,7 @@ async def getCurrentUsername():
 
 def check_dependencies():
     """Check if required external tools are installed."""
-    required_tools = ['openssl']
-    # Skip kubectl check if in test mode (detected by AKSCAB_TEST env or PYTEST_CURRENT_TEST)
-    if not (os.environ.get('AKSCAB_TEST') or os.environ.get('PYTEST_CURRENT_TEST')):
-        required_tools.append('kubectl')
+    required_tools = ['openssl', 'kubectl']
     missing_tools = []
     for tool in required_tools:
         try:

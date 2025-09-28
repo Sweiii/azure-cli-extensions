@@ -51,6 +51,7 @@ def create_help():
     print("3. Optionally set expiration seconds with --expiration-seconds (default: 1800)")
     print("4. Optionally set keysize with --keysize (default: 3072)")
     print("6. Optionally specify kubeconfig path with --kubeconfig-path (default: ~/.kube/config)")
+    print("7. Optionally specify --dev to indicate development mode with minikube.")
     print("Example: az akscab create csr --role pod-reader --environment nonprod")
 
 

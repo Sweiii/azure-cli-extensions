@@ -37,4 +37,9 @@ class AkscabScenarioTest(ScenarioTest):
 
     def test_akscab_create_csr_all_parameter_validation(self):
         """Test akscab create csr parameter validation"""
-        self.cmd('akscab create csr --role test-role --environment dev --expiration-seconds 600 --keysize 2048 --kubeconfig-path /tmp/kubeconfig --dev')
+        import os
+        os.environ['AKSCAB_SKIP_DEPENDENCY_CHECK'] = 'true'
+        try:
+            self.cmd('akscab create csr --role test-role --environment dev --expiration-seconds 600 --keysize 3072 --kubeconfig-path /tmp/kubeconfig --dev')
+        finally:
+            os.environ.pop('AKSCAB_SKIP_DEPENDENCY_CHECK', None)

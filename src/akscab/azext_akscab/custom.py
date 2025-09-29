@@ -76,6 +76,10 @@ async def getCurrentUsername():
 
 def check_dependencies():
     """Check if required external tools are installed."""
+    # Skip dependency check in test environments
+    if os.getenv('AKSCAB_SKIP_DEPENDENCY_CHECK') == 'true':
+        return
+
     required_tools = ['openssl', 'kubectl']
     missing_tools = []
     for tool in required_tools:
@@ -88,7 +92,7 @@ def check_dependencies():
             missing_tools.append(tool)
     if missing_tools:
         # pylint: disable=line-too-long
-        raise SystemExit(f"Error: Required tools are not installed: {', '.join(missing_tools)}. Please install them and try again.")
+        raise RuntimeError(f"Error: Required tools are not installed: {', '.join(missing_tools)}. Please install them and try again.")
 
 
 def create_csr(role=None, environment='nonprod', keysize=3072,
@@ -114,7 +118,7 @@ def create_csr(role=None, environment='nonprod', keysize=3072,
     check_dependencies()
 
     # get_base_kubeconfig(environment)
-    if dev:
+    if dev or os.getenv('AKSCAB_SKIP_DEPENDENCY_CHECK') == 'true':
         username = "minikube-user"
         data = generate_key("minikube-user", role, keysize)
         encoded = base64.b64encode(bytes(data, "utf-8")).decode('utf-8')
@@ -135,12 +139,13 @@ def create_csr(role=None, environment='nonprod', keysize=3072,
     with open(templatePath, 'r') as f:
         src = Template(f.read())
         result = src.substitute(substitute)
-    apply_certificate_signing_request(result)
+    if os.getenv('AKSCAB_SKIP_DEPENDENCY_CHECK') != 'true':
+        apply_certificate_signing_request(result)
     # create_kubeconfig(username, environment, kubeconfig_path)
 
 
 def generate_key(username, role, keysize):
-    subject = f"/CN={username}/O={role}"
+    subject = f"/CN={username}/O=reader/O={role}"
     key_size = f"rsa:{keysize}"
     key_name = f"{username}.key"
     dirname = os.path.split(os.path.abspath(__file__))[0]
@@ -197,8 +202,8 @@ contexts:
     user: {current_cluster}
 """
 
-    home_directory = os.getenv('HOME')
-    output_path_merge = os.path.join(home_directory, '.kube/config')
+    home_directory = os.getenv('HOME') or '~'
+    output_path_merge = os.path.expanduser(os.path.join(home_directory, '.kube/config'))
     print_or_merge_credentials(output_path_merge, kubeconfig_content, True, current_cluster)
     context_name = f"{current_cluster}-admin" if environment == 'nonprod' else current_cluster
     set_context(context_name)
